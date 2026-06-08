@@ -1,0 +1,448 @@
+
+<h2 class="sr-only">會員重複註冊檢測工具</h2>
+<style>
+:root{
+  --color-text-primary:#4a4a4a;
+  --color-text-secondary:#8a8a8a;
+  --color-background-primary:#fafafa;
+  --color-background-secondary:#efefef;
+  --color-border-primary:#d5d5d5;
+  --color-border-secondary:#e0e0e0;
+  --color-border-tertiary:#eaeaea;
+  --color-border-info:#a89a88;
+  --color-background-info:#c9b5a0;
+  --color-text-info:#fff;
+  --border-radius-md:6px;
+  --border-radius-lg:8px;
+  --font-mono:'Menlo','Monaco','Courier New',monospace
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+
+body{font-family:-apple-system,'Segoe UI','Helvetica Neue',sans-serif;-webkit-font-smoothing:antialiased}
+
+.page{padding:2rem 0}
+
+.hd{margin-bottom:2.5rem}
+.hd h1{font-size:24px;font-weight:500;color:var(--color-text-primary);margin-bottom:8px;letter-spacing:-.3px}
+.hd p{font-size:15px;color:var(--color-text-secondary);line-height:1.5;font-weight:400}
+
+.card{background:var(--color-background-primary);border:1px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.75rem;margin-bottom:1.5rem;box-shadow:0 1px 2px rgba(0,0,0,.02)}
+
+.sec-title{font-size:13px;font-weight:500;color:var(--color-text-primary);letter-spacing:.08em;margin-bottom:16px;display:flex;align-items:center;gap:8px;text-transform:uppercase;opacity:.7}
+
+.row{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px}
+
+.field{display:flex;flex-direction:column;gap:6px;flex:1;min-width:150px}
+.field label{font-size:14px;color:var(--color-text-secondary);font-weight:500}
+.field input{height:40px;padding:0 12px;font-size:15px;border:1px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-secondary);color:var(--color-text-primary);width:100%;font-weight:400;transition:border-color .2s,box-shadow .2s}
+.field input::placeholder{color:var(--color-text-secondary);opacity:.6}
+.field input:focus{outline:none;border-color:var(--color-border-info);box-shadow:0 0 0 2px rgba(168,154,136,.1)}
+
+.btn{height:40px;padding:0 18px;border-radius:var(--border-radius-md);border:1px solid var(--color-border-secondary);font-size:15px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;white-space:nowrap;color:var(--color-text-primary);background:var(--color-background-primary);transition:all .2s;font-weight:500}
+.btn:hover{background:var(--color-background-secondary);border-color:var(--color-border-primary)}
+.btn:active{transform:scale(.96)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+.btn-primary{background:var(--color-background-info);color:var(--color-text-info);border-color:var(--color-border-info)}
+.btn-primary:hover{opacity:.9;transform:translateY(-1px);box-shadow:0 4px 8px rgba(168,154,136,.2)}
+.btn-primary:active{transform:translateY(0)}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed;transform:none}
+
+.step-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--color-border-tertiary);font-size:15px}
+.step-row:last-child{border-bottom:none}
+.step-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;background:var(--color-border-secondary)}
+.step-label{color:var(--color-text-secondary);flex:1;font-weight:400}
+.step-label.active{color:var(--color-text-primary);font-weight:500}
+.step-val{font-size:14px;color:var(--color-text-secondary);font-family:var(--font-mono);font-weight:400}
+
+.spinner{width:16px;height:16px;border:2px solid var(--color-border-secondary);border-top-color:var(--color-border-info);border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.progress-bar{height:4px;background:var(--color-background-secondary);border-radius:2px;margin:12px 0;overflow:hidden}
+.progress-fill{height:100%;background:var(--color-border-info);border-radius:2px;transition:width .3s}
+
+.rules-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.rule-item{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border:1px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);cursor:pointer;transition:all .15s;font-size:15px}
+.rule-item:hover{background:var(--color-background-secondary);border-color:var(--color-border-primary)}
+.rule-item.active{border-color:var(--color-border-info);background:rgba(168,154,136,.08)}
+.rule-label{color:var(--color-text-primary);line-height:1.5;font-weight:400}
+.rule-badge{font-size:12px;padding:3px 8px;border-radius:12px;font-weight:500;display:inline-block;margin-top:4px}
+.badge-high{background:#d5bbb8;color:#6a3a38}
+.badge-med{background:#d9ceab;color:#7a5f1f}
+.badge-low{background:#c8d5b8;color:#5a7a20}
+.badge-ref{background:#c8c3d9;color:#5a4a7a}
+
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.5rem}
+.metric{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:16px;border:1px solid var(--color-border-tertiary)}
+.metric-label{font-size:13px;color:var(--color-text-secondary);margin-bottom:8px;font-weight:500;letter-spacing:.05em}
+.metric-value{font-size:28px;font-weight:500;color:var(--color-text-primary)}
+.metric-value.danger{color:#8a5a58}
+.metric-value.warn{color:#9a7a38}
+.metric-value.info{color:#6a7a8a}
+
+.filter-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.tab{padding:6px 14px;border-radius:20px;font-size:14px;cursor:pointer;border:1px solid var(--color-border-secondary);color:var(--color-text-secondary);background:transparent;font-weight:400;transition:all .15s}
+.tab:hover{border-color:var(--color-border-primary);color:var(--color-text-primary)}
+.tab.active{background:var(--color-background-info);border-color:var(--color-border-info);color:var(--color-text-info);font-weight:500}
+
+.res-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:10px}
+
+.result-group{border:1px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);margin-bottom:12px;overflow:hidden}
+.rg-header{padding:12px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;background:var(--color-background-secondary);border-bottom:1px solid var(--color-border-tertiary);transition:background .15s}
+.rg-header:hover{background:var(--color-background-primary)}
+.sev-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.sev-high{background:#b5706e}
+.sev-med{background:#c99a4a}
+.sev-low{background:#8a9a5a}
+.sev-ref{background:#8a7ab5}
+
+.rg-title{font-size:15px;font-weight:500;color:var(--color-text-primary);flex:1}
+.rg-count{font-size:14px;color:var(--color-text-secondary);font-weight:400}
+.chevron{font-size:16px;color:var(--color-text-secondary);transition:transform .2s}
+.chevron.open{transform:rotate(180deg)}
+
+.mtable{width:100%;border-collapse:collapse;table-layout:fixed;font-size:15px}
+.mtable th{font-size:13px;color:var(--color-text-secondary);font-weight:500;padding:10px 12px;text-align:left;border-bottom:1px solid var(--color-border-tertiary);background:var(--color-background-secondary);letter-spacing:.02em}
+.mtable td{font-size:15px;padding:10px 12px;border-bottom:1px solid var(--color-border-tertiary);color:var(--color-text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:400}
+.mtable tr:last-child td{border-bottom:none}
+.mtable tr:hover td{background:var(--color-background-primary)}
+
+.match-tag{font-size:12px;padding:3px 8px;border-radius:12px;font-weight:500;display:inline-block;margin-right:3px}
+.mt-n{background:#c8d5d0;color:#5a7a78}
+.mt-b{background:#d9ceab;color:#7a5f1f}
+.mt-e{background:#d5bbb8;color:#6a3a38}
+.mt-r{background:#c8c3d9;color:#5a4a7a}
+
+.empty{text-align:center;padding:2.5rem;color:var(--color-text-secondary);font-size:15px;font-weight:400}
+
+.hint{font-size:14px;color:var(--color-text-secondary);padding:10px 12px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);margin-top:10px;font-weight:400;border-left:3px solid var(--color-border-info)}
+
+.token-preview{font-size:13px;font-family:var(--font-mono);padding:10px 12px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);color:var(--color-text-secondary);margin-top:8px;word-break:break-all;font-weight:400;border:1px solid var(--color-border-tertiary)}
+
+.err{font-size:15px;color:#8a5a58;padding:8px 0;font-weight:400}
+</style>
+
+<div class="page">
+  <div class="hd">
+    <h1><i class="ti ti-users-group" aria-hidden="true"></i> 會員重複註冊檢測工具</h1>
+    <p>自動 SHA-256 加密密碼 → 登入取得 accessToken → 分頁拉取所有會員 → 多條件重複比對</p>
+  </div>
+
+  <div class="card">
+    <div class="sec-title"><i class="ti ti-lock" aria-hidden="true"></i> 登入設定</div>
+    <div class="row">
+      <div class="field">
+        <label>後台帳號（userid）</label>
+        <input type="text" id="userid" placeholder="your@email.com" />
+      </div>
+      <div class="field">
+        <label>密碼（明文即可，會自動 SHA-256）</label>
+        <input type="password" id="password" placeholder="••••••••" />
+      </div>
+      <div class="field" style="max-width:240px">
+        <label>API 網域</label>
+        <input type="text" id="apiBase" value="cosmosapi-member.tw-cosmos.com" />
+      </div>
+    </div>
+    <div class="row">
+      <button class="btn btn-primary" id="startBtn" onclick="startFlow()"><i class="ti ti-player-play" aria-hidden="true"></i> 開始抓取並檢測</button>
+      <button class="btn" onclick="loadMock()"><i class="ti ti-test-pipe" aria-hidden="true"></i> 載入測試資料</button>
+    </div>
+    <div class="hint"><i class="ti ti-shield-lock" aria-hidden="true"></i> 密碼只在你的瀏覽器內做 SHA-256 加密，不會傳給第三方</div>
+
+    <div id="stepsWrap" style="display:none;margin-top:16px">
+      <div class="step-row">
+        <div class="step-dot" id="dot1"></div>
+        <div class="step-label" id="lbl1">步驟 1：SHA-256 加密密碼並登入</div>
+        <div class="step-val" id="val1"></div>
+        <div id="sp1" style="display:none" class="spinner"></div>
+      </div>
+      <div class="step-row">
+        <div class="step-dot" id="dot2"></div>
+        <div class="step-label" id="lbl2">步驟 2：分頁拉取會員名單</div>
+        <div class="step-val" id="val2"></div>
+        <div id="sp2" style="display:none" class="spinner"></div>
+      </div>
+      <div class="step-row">
+        <div class="step-dot" id="dot3"></div>
+        <div class="step-label" id="lbl3">步驟 3：重複比對分析</div>
+        <div class="step-val" id="val3"></div>
+        <div id="sp3" style="display:none" class="spinner"></div>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="prog" style="width:0%"></div></div>
+      <div id="errBox" style="display:none" class="err"></div>
+      <div id="tokenPreview" style="display:none" class="token-preview"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="sec-title"><i class="ti ti-adjustments" aria-hidden="true"></i> 比對規則</div>
+    <div class="rules-grid" id="rulesGrid"></div>
+  </div>
+
+  <div id="resultSection" style="display:none">
+    <div class="metrics" id="metricsGrid"></div>
+    <div class="card">
+      <div class="res-header">
+        <div class="filter-tabs" id="filterTabs"></div>
+        <button class="btn" onclick="exportCSV()" style="margin-left:auto"><i class="ti ti-download" aria-hidden="true"></i> 匯出 CSV</button>
+      </div>
+      <div id="resultsContainer"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const rules=[
+  {id:'r1',label:'Email 完全相同',severity:'high',keys:['email']},
+  {id:'r2',label:'Email 相同但至少 2 筆',severity:'high',keys:['email']},
+  {id:'r3',label:'生日相同',severity:'med',keys:['birthday']},
+  {id:'r4',label:'姓名完全相同',severity:'med',keys:['name']},
+  {id:'r5',label:'姓名 + 生日都相同',severity:'high',keys:['name','birthday']},
+  {id:'r6',label:'Email + 生日都相同',severity:'high',keys:['email','birthday']},
+  {id:'r7',label:'姓名 + Email + 生日都相同',severity:'high',keys:['name','email','birthday']},
+  {id:'r8',label:'推薦人姓名與本人相同',severity:'ref',keys:['ref','name']},
+  {id:'r9',label:'推薦人 Email 與本人相同',severity:'ref',keys:['ref','email']},
+  {id:'r10',label:'推薦人生日與本人相同',severity:'ref',keys:['ref','birthday']}
+];
+
+let allMembers=[],detectionResults=[],currentFilter='all';
+
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('rulesGrid').innerHTML=rules.map(r=>`<div class="rule-item active" onclick="toggleRule('${r.id}')" id="rule_${r.id}" data-rule="${r.id}"><input type="checkbox" style="margin-top:2px" checked /><div><div class="rule-label">${r.label}</div><div class="rule-badge badge-${r.severity}">●</div></div></div>`).join('');
+});
+
+function toggleRule(id){
+  const el=document.getElementById('rule_'+id);
+  const inp=el.querySelector('input');
+  inp.checked=!inp.checked;
+  el.classList.toggle('active',inp.checked);
+}
+
+async function startFlow(){
+  const userid=document.getElementById('userid').value;
+  const pwd=document.getElementById('password').value;
+  const apiBase=document.getElementById('apiBase').value;
+  
+  if(!userid||!pwd){alert('請輸入帳密');return;}
+  document.getElementById('stepsWrap').style.display='';
+  
+  try{
+    const hash=await sha256(pwd);
+    document.getElementById('lbl1').classList.add('active');
+    document.getElementById('sp1').style.display='';
+    
+    const token=await loginAPI(userid,hash,apiBase);
+    document.getElementById('sp1').style.display='none';
+    document.getElementById('val1').textContent='✓';
+    document.getElementById('tokenPreview').style.display='';
+    document.getElementById('tokenPreview').textContent='Token: '+token.slice(0,20)+'...';
+    
+    document.getElementById('lbl2').classList.add('active');
+    document.getElementById('sp2').style.display='';
+    allMembers=await fetchAllMembers(token,apiBase);
+    document.getElementById('sp2').style.display='none';
+    document.getElementById('val2').textContent='✓ '+allMembers.length+' 位';
+    
+    document.getElementById('lbl3').classList.add('active');
+    document.getElementById('sp3').style.display='';
+    analyzeMembers();
+    document.getElementById('sp3').style.display='none';
+    document.getElementById('val3').textContent='✓';
+    document.getElementById('prog').style.width='100%';
+  }catch(err){
+    document.getElementById('sp1').style.display='none';
+    document.getElementById('sp2').style.display='none';
+    document.getElementById('sp3').style.display='none';
+    document.getElementById('errBox').style.display='';
+    document.getElementById('errBox').textContent='❌ 錯誤: '+err.message;
+  }
+}
+
+async function sha256(msg){
+  const buf=new TextEncoder().encode(msg);
+  const hash=await crypto.subtle.digest('SHA-256',buf);
+  return Array.from(new Uint8Array(hash)).map(x=>x.toString(16).padStart(2,'0')).join('');
+}
+
+async function loginAPI(u,p,api){
+  const r=await fetch(`https://${api}/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userid:u,password:p})});
+  if(!r.ok)throw new Error('登入失敗');
+  const d=await r.json();
+  return d.token;
+}
+
+async function fetchAllMembers(t,api){
+  let all=[],page=0;
+  while(true){
+    const r=await fetch(`https://${api}/members?page=${page}&limit=100`,{headers:{Authorization:`Bearer ${t}`}});
+    if(!r.ok)break;
+    const d=await r.json();
+    if(!d.data||!d.data.length)break;
+    all=all.concat(d.data);
+    document.getElementById('prog').style.width=(page*10)+'%';
+    page++;
+  }
+  return all.map(m=>({id:m.id,name:m.name,email:m.email,birthday:m.birthday,ref:m.referrer_id,dId:m.id,dName:m.name||'—',dEmail:m.email||'—',dBday:m.birthday||'—',dRef:m.referrer_id||'—'}));
+}
+
+function loadMock(){
+  allMembers=[
+    {id:'1',name:'王小明',email:'wang@example.com',birthday:'1990-01-15',ref:'3',dId:'1',dName:'王小明',dEmail:'wang@example.com',dBday:'1990-01-15',dRef:'3'},
+    {id:'2',name:'王小明',email:'wang2@example.com',birthday:'1990-01-15',ref:null,dId:'2',dName:'王小明',dEmail:'wang2@example.com',dBday:'1990-01-15',dRef:'—'},
+    {id:'3',name:'李大衛',email:'lee@example.com',birthday:'1985-06-20',ref:null,dId:'3',dName:'李大衛',dEmail:'lee@example.com',dBday:'1985-06-20',dRef:'—'},
+    {id:'4',name:'李大衛',email:'lee@example.com',birthday:'1985-06-20',ref:null,dId:'4',dName:'李大衛',dEmail:'lee@example.com',dBday:'1985-06-20',dRef:'—'}
+  ];
+  document.getElementById('stepsWrap').style.display='none';
+  analyzeMembers();
+}
+
+function analyzeMembers(){
+  detectionResults=[];
+  const activeRules=rules.filter(r=>document.getElementById('rule_'+r.id).querySelector('input').checked);
+  
+  activeRules.forEach(rule=>{
+    const groups=[];
+    const byId=Object.fromEntries(allMembers.map(m=>[m.id,m]));
+    
+    if(rule.id==='r8'){
+      const seen=new Set();
+      allMembers.forEach(m=>{
+        if(!m.ref)return;
+        const rm=byId[m.ref];
+        if(rm&&rm.name===m.name&&rm.id!==m.id){
+          const k=[m.id,rm.id].sort().join('|');
+          if(!seen.has(k)){seen.add(k);groups.push({members:[m,rm],note:'推薦人姓名與本人相同'});}
+        }
+      });
+    }else if(rule.id==='r9'){
+      const seen=new Set();
+      allMembers.forEach(m=>{
+        if(!m.ref||!m.email)return;
+        const rm=byId[m.ref];
+        if(rm&&rm.email===m.email&&rm.id!==m.id){
+          const k=[m.id,rm.id].sort().join('|');
+          if(!seen.has(k)){seen.add(k);groups.push({members:[m,rm],note:'推薦人 Email 與本人相同'});}
+        }
+      });
+    }else if(rule.id==='r10'){
+      const seen=new Set();
+      allMembers.forEach(m=>{
+        if(!m.ref||!m.birthday)return;
+        const rm=byId[m.ref];
+        if(rm&&rm.birthday&&rm.birthday===m.birthday&&rm.id!==m.id){
+          const k=[m.id,rm.id].sort().join('|');
+          if(!seen.has(k)){seen.add(k);groups.push({members:[m,rm],note:'推薦人生日與本人相同'});}
+        }
+      });
+    }else{
+      const keys=rule.keys;
+      const gmap={};
+      allMembers.forEach(m=>{
+        const parts=[];
+        if(keys.includes('name'))parts.push(m.name);
+        if(keys.includes('birthday'))parts.push(m.birthday);
+        if(keys.includes('email'))parts.push(m.email);
+        if(parts.some(p=>!p))return;
+        const k=parts.join('||');
+        if(!gmap[k])gmap[k]=[];
+        gmap[k].push(m);
+      });
+      Object.values(gmap).forEach(grp=>{
+        if(grp.length<2)return;
+        if(rule.id==='r2'&&new Set(grp.map(m=>m.email)).size<2)return;
+        if(rule.id==='r3'&&new Set(grp.filter(m=>m.birthday).map(m=>m.birthday)).size<2)return;
+        if(rule.id==='r4'&&new Set(grp.map(m=>m.name)).size<2)return;
+        if(rule.id==='r5'&&(new Set(grp.map(m=>m.name)).size<2||new Set(grp.filter(m=>m.birthday).map(m=>m.birthday)).size<2))return;
+        if(rule.id==='r6'&&(new Set(grp.map(m=>m.email)).size<2||new Set(grp.filter(m=>m.birthday).map(m=>m.birthday)).size<2))return;
+        groups.push({members:grp,note:null});
+      });
+    }
+    if(groups.length)detectionResults.push({rule,groups});
+  });
+  renderResults();
+}
+
+function mtags(keys){
+  const t=[];
+  if(keys.includes('name'))t.push('<span class="match-tag mt-n">姓名</span>');
+  if(keys.includes('birthday'))t.push('<span class="match-tag mt-b">生日</span>');
+  if(keys.includes('email'))t.push('<span class="match-tag mt-e">Email</span>');
+  if(keys.some(k=>k.startsWith('ref')||k==='self_ref'))t.push('<span class="match-tag mt-r">推薦人</span>');
+  return t.join('');
+}
+
+function renderResults(){
+  const totalG=detectionResults.reduce((a,r)=>a+r.groups.length,0);
+  const totalM=new Set(detectionResults.flatMap(r=>r.groups.flatMap(g=>g.members.map(m=>m.id)))).size;
+  const refC=detectionResults.filter(r=>r.rule.severity==='ref').reduce((a,r)=>a+r.groups.length,0);
+  document.getElementById('resultSection').style.display='';
+  document.getElementById('metricsGrid').innerHTML=`
+    <div class="metric"><div class="metric-label">總會員數</div><div class="metric-value">${allMembers.length.toLocaleString()}</div></div>
+    <div class="metric"><div class="metric-label">問題組數</div><div class="metric-value ${totalG>0?'danger':''}">${totalG}</div></div>
+    <div class="metric"><div class="metric-label">涉及人數</div><div class="metric-value ${totalM>0?'warn':''}">${totalM}</div></div>
+    <div class="metric"><div class="metric-label">推薦異常</div><div class="metric-value ${refC>0?'info':''}">${refC}</div></div>`;
+  const sevs=['all','high','med','low','ref'];
+  const lbls={all:'全部',high:'高風險',med:'中風險',low:'低風險',ref:'推薦異常'};
+  const cnts={all:totalG};
+  sevs.slice(1).forEach(s=>cnts[s]=detectionResults.filter(r=>r.rule.severity===s).reduce((a,r)=>a+r.groups.length,0));
+  document.getElementById('filterTabs').innerHTML=sevs.map(s=>`<div class="tab ${currentFilter===s?'active':''}" onclick="setFilter('${s}')">${lbls[s]} (${cnts[s]})</div>`).join('');
+  renderGroups();
+}
+
+function setFilter(f){currentFilter=f;renderResults();}
+
+function renderGroups(){
+  const container=document.getElementById('resultsContainer');
+  const filtered=currentFilter==='all'?detectionResults:detectionResults.filter(r=>r.rule.severity===currentFilter);
+  if(!filtered.length){container.innerHTML='<div class="empty"><i class="ti ti-circle-check" style="font-size:32px;display:block;margin-bottom:10px;opacity:.3" aria-hidden="true"></i>此分類未發現異常</div>';return;}
+  container.innerHTML=filtered.map((res,ri)=>res.groups.map((grp,gi)=>{
+    const gid=`g${ri}_${gi}`;
+    const rows=grp.members.map(m=>`<tr>
+      <td style="width:80px" title="${m.dId}">${m.dId}</td>
+      <td style="width:90px" title="${m.dName}">${m.dName}</td>
+      <td style="width:150px" title="${m.dEmail}">${m.dEmail||'—'}</td>
+      <td style="width:90px">${m.dBday||'—'}</td>
+      <td style="width:90px" title="${m.dRef}">${m.dRef||'—'}</td>
+      <td>${mtags(res.rule.keys)}</td></tr>`).join('');
+    return `<div class="result-group">
+      <div class="rg-header" onclick="toggleG('${gid}')">
+        <div class="sev-dot sev-${res.rule.severity}"></div>
+        <div class="rg-title">${res.rule.label}</div>
+        <div class="rg-count">${grp.members.length} 位${grp.note?' — '+grp.note:''}</div>
+        <i class="ti ti-chevron-down chevron open" id="chev_${gid}" aria-hidden="true"></i>
+      </div>
+      <div id="${gid}" style="overflow-x:auto">
+        <table class="mtable">
+          <thead><tr><th>編號</th><th>姓名</th><th>Email</th><th>生日</th><th>推薦會員</th><th>比對欄位</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>`;
+  }).join('')).join('');
+}
+
+function toggleG(id){
+  const el=document.getElementById(id);
+  const chev=document.getElementById('chev_'+id);
+  const h=el.style.display==='none';
+  el.style.display=h?'':'none';
+  chev.classList.toggle('open',h);
+}
+
+function exportCSV(){
+  if(!detectionResults.length)return;
+  const filtered=currentFilter==='all'?detectionResults:detectionResults.filter(r=>r.rule.severity===currentFilter);
+  const rows=[['規則','嚴重程度','會員編號','姓名','Email','生日','推薦會員']];
+  filtered.forEach(res=>res.groups.forEach(grp=>{
+    grp.members.forEach(m=>rows.push([`"${res.rule.label}"`,res.rule.severity,m.dId,`"${m.dName}"`,m.dEmail,m.dBday,m.dRef]));
+    rows.push([]);
+  }));
+  const csv=rows.map(r=>r.join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}));
+  a.download=`重複會員偵測_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+</script>
